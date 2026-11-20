@@ -1,0 +1,10 @@
+bin/
+obj/
+data/
+publish/
+src/Panel/wwwroot/
+node_modules/
+.superdesign/tmp/
+.superpowers/
+*.user
+.vs/

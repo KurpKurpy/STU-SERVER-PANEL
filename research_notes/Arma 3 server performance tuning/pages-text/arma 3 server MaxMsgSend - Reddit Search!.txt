@@ -1,0 +1,518 @@
+
+
+      Skip to main content
+
+            arma 3 server MaxMsgSend
+
+      Open menu
+
+    Open navigation
+
+  Go to Reddit Home
+
+      Advertise on RedditAdvertise on Reddit
+
+      Open chat
+    Open chat
+
+      Create
+
+      Create postCreate post
+
+      Open inboxOpen inbox
+
+      Expand user menu
+    Open profile menu
+
+    Skip to Navigation  
+
+        Go back  arma 3 server MaxMsgSend  
+
+        New question      
+
+ Is this helpful?  
+    Helpful        Unhelpful       
+
+Why was this unhelpful?         
+Select all that apply: 
+    Outdated      Off-topic      Redundant      Lacking Detail      
+If you think a piece of content used to generate these results may be in violation of Reddit’s Content Policy, report the individual post or comment. 
+   Submit      
+
+ Related   Arma 3 server configuration settings   MaxMsgSend impact on performance   Best practices for Arma 3 server setup    
+  Responses are AI-generated  from posts and comments and may not be accurate.   
+
+      arma 3 server MaxMsgSend
+
+Sources: r/arma, r/armadev, r/A3AntistasiOfficial
+
+          Generated from these posts:
+
+              1
+
+            r/arma
+
+        Hosting Arma 3 Servers
+
+          5
+
+        ·
+
+          6
+
+              2
+
+            r/arma
+
+        Is there an easy and definite way of setting up an Arma 3 server to play coop with friends?
+
+          4
+
+        ·
+
+          9
+
+              3
+
+            r/arma
+
+        Unable to host game on Arma 3
+
+          5
+
+        ·
+
+          12
+
+              4
+
+            r/arma
+
+        Hey, i need help with setting up arma 3 server
+
+          2
+
+        ·
+
+          8
+
+              5
+
+            r/armadev
+
+        Arma 3 - correct syntax for server to send message in side chat
+
+          2
+
+        ·
+
+          4
+
+              6
+
+            r/A3AntistasiOfficial
+
+        Antistasi + Arma 3 Command — JOIN GROUP spam and disappearing HC groups
+
+          0
+
+        ·
+
+          13
+
+              7
+
+            r/arma
+
+        Arma3 server no longer listed to a few friends, but can direct connect
+
+          1
+
+        ·
+
+          4
+
+              8
+
+            r/arma
+
+        My ArmA 3 server returns to the mission selection screen after attempting to load a map with mods
+
+          3
+
+        ·
+
+          12
+
+              9
+
+            r/arma
+
+        How do you run a private Arma 3 server for friends over the internet?
+
+          4
+
+        ·
+
+          9
+
+              10
+
+            r/arma
+
+        Arma 3 Can't see friends server? Despite port forwarding, hosting myself, checking UPNP mark, and trying to host myself
+
+          2
+
+        ·
+
+          12
+
+              11
+
+            r/arma
+
+        Arma 3 joining friend server
+
+          5
+
+        ·
+
+          5
+
+          +9
+
+          View all
+
+    Are you asking about Arma 3’s MaxMsgSend server setting? Reddit results didn’t explain that parameter specifically, but they point to the official dedicated-server guide and relevant config troubleshooting.
+
+What Reddit results cover
+
+    MaxMsgSend wasn’t addressed directly: The discussions found were about hosting, connectivity, and sending chat messages, not what this server setting controls or what value to use. The search results therefore don’t support recommending a specific value. "The most important thing to check is whether your ISP uses CG-NAT."
+
+    For dedicated-server setup, check the official guide: A Reddit commenter points people to Bohemia Interactive’s dedicated server documentation for setup details. "The Arma 3 Dedicated Server official wiki page has all the information needed to set up a server for coop (or any other type) play."
+
+If you’re troubleshooting a server
+
+    Separate network problems from server startup problems: Check server logs and confirm the server initializes on its configured port before focusing on port forwarding. "If that's the case your server isn't even launching correctly and this isn't a port forward issue."
+
+    CGNAT can prevent ordinary internet hosting: If your router doesn’t have a publicly reachable address, forwarding ports on it may not be enough; ask your ISP or consider a tunnel/VPN alternative. "You need to contact your provider and ask if you're behing CGNAT, and if so, if they can let you use the ports Arma 3 need."
+
+    Use logs and setup details when asking for help: Share whether it’s dedicated or in-game hosting, the launch method, errors, and the relevant configuration. "So...does the server even boot? Are you launching a dedicated server or hosting via in-game? Do you get some errors?"
+
+If you meant chat messages
+
+    remoteExec is for sending chat commands to clients: This is separate from the MaxMsgSend server setting; the Reddit example broadcasts a sideChat message. “[MyUnit, ["My message"] remoteExec ["sideChat", 0, false];"](https://www.reddit.com/r/armadev/comments/1jdym8c/comment/miecjnm/)
+
+Communities for Further Discussion
+
+    r/arma
+
+    r/armadev
+
+    For MaxMsgSend itself, check the server configuration documentation or share your config, current value, and the issue you’re trying to fix.
+
+                                Ask a followup    Characters remaining 500          
+
+    Reddit Rules
+
+    Privacy Policy
+
+    User Agreement
+
+    Accessibility
+
+    OSA Information
+  •
+
+      Reddit, Inc. © 2026. All rights reserved.
+
+    Reddit Rules
+
+    Privacy Policy
+
+    User Agreement
+
+    Accessibility
+
+    OSA Information
+  •
+
+      Reddit, Inc. © 2026. All rights reserved.
+
+ Expand Navigation    
+
+      Expand Navigation
+
+ Collapse Navigation    
+
+      Collapse Navigation
+
+         Home              
+         Popular              
+         News               
+         Explore                
+
+        &nbsp;
+
+        &nbsp;
+
+        &nbsp;
+
+        &nbsp;
+
+        Start a community
+
+        GAMES ON REDDIT
+
+                    Merge Puzzle Game
+
+                    Merge the fruits!
+
+                        137K
+                              monthly players
+
+Romantish: Merge and Vote!               
+
+Orbitals               
+
+Color Maps              
+
+ Discover More            
+
+        MODERATION
+
+Mod Queue
+
+Mod Mail
+
+r/Mod
+
+Manage
+
+r/Mostovia                
+
+        CUSTOM FEEDS
+
+        Create Custom Feed
+
+        RECENT
+
+r/roblox
+
+r/Mostovia
+
+r/MilitaryVStheUnknown
+
+r/doujinshi
+
+r/FindAUnit
+
+        COMMUNITIES
+
+      Manage Communities
+
+r/announcements               
+
+r/Demonfall               
+
+r/DilucMains               
+
+r/Eldenring               
+
+r/ffxiv               
+
+r/FindAUnit               
+
+r/Genshin_Impact               
+
+r/HuTao_Mains               
+
+r/KazuhaMains               
+
+r/lfg               
+
+r/Minecraft               
+
+r/Mostovia               
+
+r/StarWars                
+
+        RESOURCES
+
+About Reddit
+
+Advertise
+
+Developer Platform
+
+Reddit Pro
+
+      BETA
+
+Help
+
+Blog
+
+Careers
+
+Press
+
+Best of Reddit
+
+OSA Information
+
+Reddit Rules
+
+Privacy Policy
+
+User Agreement
+
+Accessibility
+
+    Reddit, Inc. © 2026. All rights reserved.
+
+      Skip to main chat content
+
+          Chats
+
+             Mark all messages as read
+
+             Create new chat
+
+          Filter chat inbox
+
+       Group chats           
+
+       Direct chats           
+
+       Mod mail           
+
+       Unread                         
+
+           Apply   
+
+      Threads
+
+                  One_Of_The_Gays 
+
+              Mar 29, 2025
+
+        You: We know that elves are a little more reserved and such but idk if Drow would be considered under that reservation aswell since they're also elves but from the underdark
+
+                  Fearless-Tennis-9030 
+
+              Nov 12, 2024
+
+        Fearless-Tennis-9030: yo kurp were you guys at?
+
+                  Psychological_Wall30 
+
+              Nov 10, 2024
+
+        You: Apologies but unfortunately this isn't the game for us, good luck in filling your slots
+
+                  MikeWarfstache 
+
+              Nov 8, 2024
+
+        You: Hey me and my partner could potentially be interested in joining up, Whats the premise of the campaign if i may ask and what are the age ranges your going for?
+
+    Skip to chat navigation bar
+
+      One_Of_The_Gays
+
+        Mar 29, 2025
+
+                  kurp_kurpy
+
+      6:01 PM
+
+Hey i saw your post on LFG and me and my partner are interested and would like to inquire about a few things what time do you reckon you'll do cause friday and sunday work best for us. 
+
+Also what is the age range you're wanting to keep in this personally we're looking for 18-24
+
+Also are you using VTT or VoM
+
+                  One_Of_The_Gays
+
+      6:22 PM
+
+Friday and Sunday should both work, Sunday is very open and my work schedule is about to change so I'll have to update you later about Friday - if I had to guess though after 1700 Friday *should* work, in CST/UTC-5
+
+        6:23 PM
+
+I don't currently have plans to use a VTT but if, by popular demand, the players involved want it I may incorporate one
+
+        6:24 PM
+
+I fit in the age range stated, as is 1 of the players, the other player confirmed to be part of the campaign is a bit above it but a far cry from being old enough to be any of our parent's or anything like that
+
+                  kurp_kurpy
+
+      6:26 PM
+
+How many people do you guys have currently as its me and my partner so thats 2 people plus what you've got currently
+
+                  One_Of_The_Gays
+
+      6:35 PM
+
+2 currently
+
+        6:36 PM
+
+A bladesinger wizard and a draconic sorcerer
+
+        6:37 PM
+
+Don't worry too much about party balance when deciding what to play as, my philosophy with dm'ing is that it's my job to balance encounters to what the party actually is rather then doing something like making someone play cleric for party balance - who cares if it's not a balanced party, it just needs to be a fun party with encounters that play to their strengths and weaknesses in a fun way
+
+                  kurp_kurpy
+
+      7:15 PM
+
+We'd love to join you, if theres a interview thing you want to do or a session 0 or if you have any questions for me shoot them my way :>
+
+        7:15 PM
+
+And also my discord is kurpskurpin and my partners is _deita_
+
+                  One_Of_The_Gays
+
+      7:18 PM
+
+What kind of character's do y'all want to play as? Any ideas for class, race, background, ect
+
+                  kurp_kurpy
+
+      8:13 PM
+
+Well we havent developed much in terms of characters yet as we didnt BUT the general idea we had was me as Drow, ranger/Rogue and I'd be an outcast from their society or based on your lore will change as needed but dont wanna make too much till i know whats okay and isnt
+
+ME
+Drow Ranger/rogue
+unsure of subclasses as Its something i wanna explore more
+
+As for my partner they wanna be fighter unsure on race and wanna know if you got the DND expanded book?
+
+        8:15 PM
+
+We know that elves are a little more reserved and such but idk if Drow would be considered under that reservation aswell since they're also elves but from the underdark
+
+          One_Of_The_Gays
+
+              Redditor for 2y
+               · 
+              2.4K karma
+
+      Send media
+
+          Send an emoji
+
+          Send a GIF
+
+    Send message
+
+100 %
+

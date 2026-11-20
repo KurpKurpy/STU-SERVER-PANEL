@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Agent/Agent.csproj" />
+    <Project Path="src/ArmaFormats/ArmaFormats.csproj" />
+    <Project Path="src/Contracts/Contracts.csproj" />
+    <Project Path="src/Panel/Panel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Agent.Tests/Agent.Tests.csproj" />
+    <Project Path="tests/ArmaFormats.Tests/ArmaFormats.Tests.csproj" />
+    <Project Path="tests/FakeArmaServer/FakeArmaServer.csproj" />
+    <Project Path="tests/FakeSteamCmd/FakeSteamCmd.csproj" />
+    <Project Path="tests/Panel.Tests/Panel.Tests.csproj" />
+  </Folder>
+</Solution>

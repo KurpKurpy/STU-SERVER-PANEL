@@ -1,0 +1,10 @@
+"The most important thing to check is whether your ISP uses CG-NAT."	https://www.reddit.com/r/arma/comments/1verlsp/comment/p1jlcp2/
+"The Arma 3 Dedicated Server official wiki page has all the information needed to set up a server for coop (or any other type) play."	https://www.reddit.com/r/arma/comments/zf2w1f/comment/iz9wnr7/
+"If that's the case your server isn't even launching correctly and this isn't a port forward issue."	https://www.reddit.com/r/arma/comments/1ox7hvp/comment/noy9pjf/
+"You need to contact your provider and ask if you're behing CGNAT, and if so, if they can let you use the ports Arma 3 need."	https://www.reddit.com/r/arma/comments/1x41wr2/comment/pgd7yds/
+"So...does the server even boot? Are you launching a dedicated server or hosting via in-game? Do you get some errors?"	https://www.reddit.com/r/arma/comments/1ox7hvp/comment/noy9ba4/
+https://www.reddit.com/r/armadev/comments/1jdym8c/comment/miecjnm/	https://www.reddit.com/r/armadev/comments/1jdym8c/comment/miecjnm/
+Merge Puzzle Game Merge the fruits! 137K monthly players	https://www.reddit.com/r/MergePuzzleGame/comments/1xzvlog
+Romantish: Merge and Vote!	https://www.reddit.com/r/RomantishGame/comments/1xbq6rm
+Orbitals	https://www.reddit.com/r/orbitals/comments/1xzvlxm
+Color Maps	https://www.reddit.com/r/ColorMaps/comments/1xzuy3m

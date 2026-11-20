@@ -1,0 +1,117 @@
+/*
+  13th Console design tokens: a sibling of the unit website ("Drop Zone") in the order-of-battle sheets' colours.
+  Design source of truth (Tailwind v4 @theme). The app imports its copy in web/src/styles/tokens.css; keep both identical.
+
+  Type: Big Shoulders Stencil Display 900 for titles (the website's display face), Barlow for UI text,
+  IBM Plex Mono only for figures, ids and times.
+  Colour: unit red from the order-of-battle sheets, black text on solid red, the sheets' green/amber status
+  blocks, and the website's neutrals.
+  Shape: cards are square; cut corners are the signature and are kept for the primary button, the active
+  nav item and the dashboard hero.
+
+  Contrast (WCAG 2.x, measured 2026-11-19, AA needs 4.5:1 for text):
+    text #ECEDED on surface #171A19 14.94   on bg #0E100F 16.28   on raised #1D2120 13.87
+    text-secondary #D3D6D4 on surface 11.97
+    text-muted #A2A8A5 on surface 7.24   on tint #241513 7.28   on raised 6.73
+    text-subtle #868C90 on surface 5.15 (smallest allowed text colour)
+    accent-text #F2716A on surface 6.13   on tint 6.16
+    ink #0E100F on accent #E8453C 4.86   on ok 9.49   on warn 10.46   on off 6.00
+    cyan variant: ink on #4FD1F0 10.65   #8FE3F7 on surface 12.10, on tint #11222A 11.27   muted on that tint 6.75
+*/
+
+@font-face { font-family: 'Stencil Fallback'; src: local('Impact'); font-weight: 100 900; size-adjust: 96%; }
+
+@theme {
+  /* Neutrals (unit website) */
+  --color-bg: #0E100F;
+  --color-sidebar: #0B0D0C;
+  --color-surface: #171A19;
+  --color-surface-raised: #1D2120;
+  --color-console: #0A0B0B;
+  --color-text: #ECEDED;
+  --color-text-secondary: #D3D6D4;
+  --color-text-muted: #A2A8A5;
+  --color-text-subtle: #868C90;
+  --color-line: rgb(236 237 237 / 0.12);
+  --color-line-strong: rgb(236 237 237 / 0.22);
+  --color-ink: #0E100F;
+
+  /* Unit red (order-of-battle sheets) */
+  --color-accent: #E8453C;
+  --color-accent-text: #F2716A;
+  --color-tint: #241513;  /* red-tinted surface for "needs attention" panels (website device) */
+
+  /* Status: solid blocks with ink text, always with a word (the sheets' "Eligible" style) */
+  --color-ok: #93C47D;
+  --color-warn: #F6B26B;
+  --color-bad: #E8453C;
+  --color-off: #8C9195;
+
+  /* Type */
+  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Big Shoulders Stencil Display", "Stencil Fallback", "Arial Narrow", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --text-2xs: 0.6875rem;  --text-2xs--line-height: 1.35;
+  --text-xs: 0.75rem;     --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;    --text-sm--line-height: 1.5;
+  --text-base: 1rem;      --text-base--line-height: 1.55;
+  --text-lg: 1.25rem;     --text-lg--line-height: 1.35;
+  --text-xl: 1.625rem;    --text-xl--line-height: 1.15;
+  --text-2xl: 2.125rem;   --text-2xl--line-height: 1.05;
+  --text-3xl: 2.75rem;    --text-3xl--line-height: 1;
+
+  --tracking-label: 0.16em;
+
+  /* Breakpoints */
+  --breakpoint-sm: 37.5rem;
+  --breakpoint-md: 56.25rem;
+  --breakpoint-lg: 75rem;
+  --breakpoint-xl: 90rem;
+
+  /* Shape: square cards; cuts are the signature */
+  --radius-none: 0;
+  --cut-sm: 10px;
+  --cut-md: 18px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-spring: cubic-bezier(.32, .72, 0, 1);
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: var(--ease-out);
+}
+
+/* Classic UNSC cyan instead of unit red: set data-accent="cyan" on <html>. Nothing else changes. */
+[data-accent="cyan"] {
+  --color-accent: #4FD1F0;
+  --color-accent-text: #8FE3F7;
+  --color-tint: #11222A;
+}
+
+/* Z-index scale: use only these values */
+:root {
+  --z-content: 0;
+  --z-sticky: 10;
+  --z-popover: 20;
+  --z-overlay: 50;
+  --z-toast: 60;
+}
+
+@utility chamfer {
+  clip-path: polygon(var(--cut-md) 0, 100% 0, 100% calc(100% - var(--cut-md)), calc(100% - var(--cut-md)) 100%, 0 100%, 0 var(--cut-md));
+}
+@utility chamfer-sm {
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% calc(100% - var(--cut-sm)), calc(100% - var(--cut-sm)) 100%, 0 100%, 0 var(--cut-sm));
+}
+
+/* Cut corners clip outlines, so cut-corner controls use an inset ring */
+@utility focus-ring-inset {
+  &:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-text); }
+}
+
+@layer base {
+  :focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  }
+}
