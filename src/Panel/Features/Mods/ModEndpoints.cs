@@ -15,7 +15,7 @@ namespace Panel.Features.Mods;
 
 public record ModDto(Guid Id, long? WorkshopId, string? LocalFolder, string Name, string Status, long SizeBytes, long? ExpectedBytes, DateTime? InstalledAt,
     DateTime? WorkshopUpdatedAt, DateTime? LatestWorkshopUpdate, bool UpdateAvailable, string? PreviewUrl, string[] KeyFiles, string? LastError, string[] Lists,
-    string ScanStatus = "NotScanned", DateTime? ScannedAt = null, string? ScanNote = null);
+    string ScanStatus = "NotScanned", DateTime? ScannedAt = null, string? ScanNote = null, bool NotPublic = false);
 public record PasteBody(string? Text);
 public record InstallBody(Guid[]? ModIds, bool? All, string? Mode);
 public record RefusedItem(long WorkshopId, string Reason);
@@ -43,6 +43,16 @@ public static class ModLibrary
     public static bool UpdateAvailable(Mod m) =>
         m.Status == ModStatus.Installed && m.LatestWorkshopUpdate is { } latest && (m.WorkshopUpdatedAt is null || latest > m.WorkshopUpdatedAt);
 
+    // An unlisted mod (or a private or removed one): Steam's public lookup can't describe it, so it has no update time and a placeholder
+    // name until its own files give it one. SteamCMD, signed in, can still download an unlisted mod; Update all fetches it every time.
+    public static string Placeholder(long workshopId) => $"Workshop item {workshopId}";
+    public static bool NotPublic(Mod m) => m.WorkshopId is not null && m.LatestWorkshopUpdate is null;
+
+    public static void NameFromFiles(Mod m, string? name)
+    {
+        if (m.WorkshopId is { } id && m.Name == Placeholder(id) && !string.IsNullOrWhiteSpace(name)) m.Name = Clip(name.Trim(), 200)!;
+    }
+
     public static string[] Keys(Mod m) => JsonSerializer.Deserialize<string[]>(m.KeyFilesJson) ?? [];
 
     public static async Task<ModDto[]> DtosAsync(AppDb db, IEnumerable<Mod> mods)
@@ -54,10 +64,12 @@ public static class ModLibrary
             .ToLookup(x => x.ModId, x => x.Name);
         return list.Select(m => new ModDto(m.Id, m.WorkshopId, m.LocalFolder, m.Name, m.Status.ToString(), m.SizeBytes, m.ExpectedBytes, m.InstalledAt,
             m.WorkshopUpdatedAt, m.LatestWorkshopUpdate, UpdateAvailable(m), m.PreviewUrl, Keys(m), m.LastError, lists[m.Id].Order().ToArray(),
-            m.ScanStatus.ToString(), m.ScannedAt, m.ScanNote)).ToArray();
+            m.ScanStatus.ToString(), m.ScannedAt, m.ScanNote, NotPublic(m))).ToArray();
     }
 
-    // Adds the Workshop items not yet in the library (Not installed), refusing ones that aren't Arma 3 items (Ruling 10).
+    // Adds the Workshop items not yet in the library (Not installed), refusing ones that aren't Arma 3 items (Ruling 10). One Steam's public
+    // lookup can't see (unlisted, private or removed) is added under a placeholder name: SteamCMD can download an unlisted one, and the
+    // download says so if it's private or gone.
     public static async Task<(List<Mod> Added, List<Mod> Existing, List<RefusedItem> Refused)> AddWorkshopAsync(AppDb db, IWorkshopClient workshop, IReadOnlyList<long> ids)
     {
         var existing = await db.Mods.Where(m => m.WorkshopId != null && ids.Contains(m.WorkshopId.Value)).ToListAsync();
@@ -70,15 +82,16 @@ public static class ModLibrary
             foreach (var id in fresh)
             {
                 var d = details.FirstOrDefault(x => x.Id == id);
-                if (d is not { Ok: true }) refused.Add(new RefusedItem(id, "Not found on the Workshop: it may be private, hidden or removed."));
-                else if (d.AppId != JobKinds.GameAppId) refused.Add(new RefusedItem(id, "That isn't an Arma 3 Workshop item."));
+                if (d is { Ok: true } && d.AppId != JobKinds.GameAppId) refused.Add(new RefusedItem(id, "That isn't an Arma 3 Workshop item."));
                 else
                 {
-                    var mod = new Mod
-                    {
-                        Id = Guid.NewGuid(), WorkshopId = id, Name = Clip(string.IsNullOrWhiteSpace(d.Title) ? $"Workshop item {id}" : d.Title.Trim(), 200)!,
-                        Status = ModStatus.NotInstalled, ExpectedBytes = d.FileSize, LatestWorkshopUpdate = d.TimeUpdated, WorkshopCheckedAt = DateTime.UtcNow, PreviewUrl = Clip(d.PreviewUrl, 500),
-                    };
+                    var mod = d is { Ok: true }
+                        ? new Mod
+                        {
+                            Id = Guid.NewGuid(), WorkshopId = id, Name = Clip(string.IsNullOrWhiteSpace(d.Title) ? Placeholder(id) : d.Title.Trim(), 200)!,
+                            Status = ModStatus.NotInstalled, ExpectedBytes = d.FileSize, LatestWorkshopUpdate = d.TimeUpdated, WorkshopCheckedAt = DateTime.UtcNow, PreviewUrl = Clip(d.PreviewUrl, 500),
+                        }
+                        : new Mod { Id = Guid.NewGuid(), WorkshopId = id, Name = Placeholder(id), Status = ModStatus.NotInstalled, WorkshopCheckedAt = DateTime.UtcNow };
                     db.Mods.Add(mod);
                     added.Add(mod);
                 }
@@ -201,6 +214,7 @@ public static class ModEndpoints
                     m.LastError = null;
                 }
                 (m.SizeBytes, m.KeyFilesJson) = (found.SizeBytes, JsonSerializer.Serialize(found.KeyFiles));
+                ModLibrary.NameFromFiles(m, found.Name);
             }
             else if (m.Status == ModStatus.Installed) m.Status = ModStatus.Missing;
         }
@@ -227,7 +241,7 @@ public static class ModEndpoints
         var mode = (body.Mode ?? "install").ToLowerInvariant();
         if (mode is not ("install" or "update" or "reinstall")) return (null, ApiError.Field("mode", "Mode is install, update or reinstall."));
         if (await settings.SteamUsernameAsync() is not { } steamUser)
-            return (null, ApiError.Of(409, "steam_user", "Set the Steam account first: Workshop downloads need an account that owns Arma 3."));
+            return (null, ApiError.Of(409, "steam_user", "Set the Steam account first (Mods page, Steam account): Workshop downloads need an account that owns Arma 3."));
         if (await ModLibrary.AgentAsync(db) is not { } agentId) return (null, ApiError.Of(409, "no_install", "Register a server install first."));
 
         var busy = new[] { ModStatus.Queued, ModStatus.Installing };
@@ -238,7 +252,7 @@ public static class ModEndpoints
             selection = mode switch
             {
                 "install" => candidates.Where(m => m.Status is ModStatus.NotInstalled or ModStatus.Failed or ModStatus.Missing).ToList(),
-                "update" => candidates.Where(ModLibrary.UpdateAvailable).ToList(),
+                "update" => candidates.Where(m => ModLibrary.UpdateAvailable(m) || (m.Status == ModStatus.Installed && ModLibrary.NotPublic(m))).ToList(),
                 _ => candidates.Where(m => m.Status == ModStatus.Installed).ToList(),
             };
         else return (null, ApiError.Field("modIds", "Pick mods, or all."));
@@ -317,6 +331,7 @@ public sealed class ModJobHandler : IJobResultHandler
                 (mod.Status, mod.InstalledAt, mod.SizeBytes, mod.KeyFilesJson, mod.LastError) =
                     (ModStatus.Installed, DateTime.UtcNow, item.SizeBytes, JsonSerializer.Serialize(item.KeyFiles ?? []), null);
                 mod.WorkshopUpdatedAt = mod.LatestWorkshopUpdate ?? DateTime.UtcNow;
+                ModLibrary.NameFromFiles(mod, item.Name);
                 mod.ScanStatus = ScanStatus.NotScanned; // new files: the hub's rescan after JobFinished reads them (Phase 5b Ruling 6)
             }
             else

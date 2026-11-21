@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { Button } from '../../components/Button'
 import { formatWhen } from '../../components/Feedback'
@@ -62,7 +62,7 @@ function SteamAnswer({ job }: { job: JobDto }) {
   return (
     <form onSubmit={submit} className="flex flex-col gap-2 border border-warn/40 bg-black/20 px-4 py-3" aria-label="Steam sign-in">
       <Field label={text.label} hint={text.hint} value={value} required maxLength={256} autoFocus
-        type={job.prompt === 'Password' ? 'password' : 'text'} autoComplete={job.prompt === 'Password' ? 'off' : 'one-time-code'}
+        type={job.prompt === 'Password' ? 'password' : 'text'} autoComplete={job.prompt === 'Password' ? 'new-password' : 'one-time-code'}
         error={answer.error ? errorMessage(answer.error) : undefined} onChange={e => setValue(e.target.value)} />
       <Button type="submit" variant="primary" size="sm" className="self-start" busy={answer.isPending}>Send to SteamCMD</Button>
     </form>
@@ -72,12 +72,23 @@ function SteamAnswer({ job }: { job: JobDto }) {
 export function JobsPanel({ jobs, tails, types }: { jobs: JobDto[]; tails: Record<string, string[]>; types?: string[] }) {
   const can = useCan()
   const mayAnswer = can('mods.install') || can('server.update')
+  const queryClient = useQueryClient()
   const cancel = useMutation({ mutationFn: (id: string) => api(`/api/jobs/${id}/cancel`, { method: 'POST' }) })
   const mine = jobs.filter(j => !types || types.includes(j.type))
+  // Clear history: the finished jobs of the kinds this panel shows; the server keeps open ones and ones you may not run.
+  const clear = useMutation({
+    mutationFn: () => api('/api/jobs/clear', { json: { types: types ?? [...new Set(mine.map(j => j.type))] } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jobs'] }),
+  })
   const shown = [...mine.filter(isOpen), ...mine.filter(j => !isOpen(j)).slice(0, 4)]
   if (shown.length === 0) return null
   return (
-    <Panel title="Jobs" meta="SteamCMD runs one job at a time">
+    <Panel title="Jobs" meta={
+      <>
+        <span>SteamCMD runs one job at a time</span>
+        {mayAnswer && mine.some(j => !isOpen(j)) && <Button size="sm" busy={clear.isPending} onClick={() => clear.mutate()}>Clear finished</Button>}
+      </>
+    }>
       <ul className="m-0 flex list-none flex-col gap-0 p-0" aria-label="Jobs">
         {shown.map(job => {
           const tail = tails[job.id] ?? (job.logText ? job.logText.split('\n') : [])
@@ -100,6 +111,7 @@ export function JobsPanel({ jobs, tails, types }: { jobs: JobDto[]; tails: Recor
         })}
       </ul>
       {cancel.error && <p role="alert" className="m-0 px-6 pb-4 text-sm text-accent-text">{errorMessage(cancel.error)}</p>}
+      {clear.error && <p role="alert" className="m-0 px-6 pb-4 text-sm text-accent-text">{errorMessage(clear.error)}</p>}
     </Panel>
   )
 }

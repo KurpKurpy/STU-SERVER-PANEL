@@ -128,6 +128,23 @@ public sealed class JobRunnerTests : IDisposable
         Assert.True(File.Exists(Path.Combine(_installRoot, "arma3server_x64.exe")));
     }
 
+    // Seen on the box (2026-11-21): SteamCMD says "ERROR (Invalid Password)", and the job only said "exit code 5".
+    [Fact]
+    public async Task Server_install_with_a_wrong_password_says_so()
+    {
+        var exe = FakeSteam.Create(new { password = "pw-1" });
+        var runner = Runner(exe);
+        var spec = new JobSpec(Guid.NewGuid(), JobKind.ServerInstall, "crow", _installRoot, null, []);
+        runner.Updated += u => { if (u.Prompt == SteamPrompt.Password) runner.Answer(spec.JobId, "wrong"); };
+        var finished = FinishedAsync(runner, spec.JobId);
+
+        Assert.True(runner.Enqueue(spec).Ok);
+        var result = await finished;
+
+        Assert.False(result.Ok);
+        Assert.Equal("Steam sign-in failed: Invalid Password.", result.Error);
+    }
+
     [Fact]
     public void Install_root_branch_and_user_are_checked()
     {
@@ -155,6 +172,7 @@ public sealed class JobRunnerTests : IDisposable
         Assert.True(item.Ok);
         Assert.True(item.SizeBytes >= 2048);
         Assert.Equal(["cba_a3.bikey"], item.KeyFiles);
+        Assert.Equal("CBA_A3", item.Name); // from its meta.cpp: an unlisted mod's only source of a name
         Assert.Contains("+login crow +workshop_download_item 107410 450814997 validate +quit", FakeSteam.ArgsSeen(exe).Last());
     }
 

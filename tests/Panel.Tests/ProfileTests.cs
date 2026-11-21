@@ -84,22 +84,48 @@ public class ProfileTests
         Assert.Equal(HttpStatusCode.BadRequest, (await owner.PostAsJsonAsync("/api/profiles", AgentKit.Profile(installId, slug: slug))).StatusCode);
     }
 
+    // The unit's Friday and Sunday servers share port 2100 (2026-11-21): profiles may share ports; Start keeps them from running together.
     [Fact]
-    public async Task Overlapping_ports_on_one_agent_are_refused()
+    public async Task Profiles_on_one_agent_may_share_ports_but_not_slugs()
     {
         using var f = new PanelFactory();
         var (owner, _, agent, installId) = await AgentKit.InstallAsync(f);
         await using var lease = agent;
         await AgentKit.CreateProfileAsync(owner, AgentKit.Profile(installId, port: 2302));
 
+        var sameSlug = await owner.PostAsJsonAsync("/api/profiles", AgentKit.Profile(installId, name: "Second", slug: "main", port: 2402));
+        Assert.Equal("conflict_slug", await Code(sameSlug));
+
+        // A near miss is a typing mistake, not a share: still refused.
         var overlap = await owner.PostAsJsonAsync("/api/profiles", AgentKit.Profile(installId, name: "Second", slug: "second", port: 2304));
         Assert.Equal(HttpStatusCode.Conflict, overlap.StatusCode);
         Assert.Equal("port_conflict", await Code(overlap));
 
-        var sameSlug = await owner.PostAsJsonAsync("/api/profiles", AgentKit.Profile(installId, name: "Second", slug: "main", port: 2402));
-        Assert.Equal("conflict_slug", await Code(sameSlug));
+        var samePort = await owner.PostAsJsonAsync("/api/profiles", AgentKit.Profile(installId, name: "Sunday", slug: "sunday", port: 2302));
+        Assert.Equal(HttpStatusCode.Created, samePort.StatusCode);
+    }
 
-        await AgentKit.CreateProfileAsync(owner, AgentKit.Profile(installId, name: "Second", slug: "second", port: 2307));
+    [Fact]
+    public async Task Of_two_profiles_on_the_same_ports_only_one_starts_at_a_time()
+    {
+        using var f = new PanelFactory();
+        var w = await ServerMissionsTests.WorldAsync(f);
+        await using var lease = w.Agent;
+        var port = (await w.Owner.GetFromJsonAsync<JsonElement>($"/api/profiles/{w.ProfileId}")).GetProperty("port").GetInt32();
+        var sunday = await AgentKit.CreateProfileAsync(w.Owner, AgentKit.Profile(w.InstallId, name: "Sunday", slug: "sunday", port: port));
+        await w.Agent.SendStatusAsync(new ProfileStatus(sunday, ServerState.Online, 4343, DateTime.UtcNow, null, null, null));
+        var starts = w.Agent.Calls.Count(c => c.Method == nameof(IAgentClient.Start));
+
+        var refused = await w.Owner.PostAsync($"/api/servers/{w.ProfileId}/start", null);
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("port_conflict", body.GetProperty("code").GetString());
+        Assert.Contains("Sunday", body.GetProperty("message").GetString());
+        Assert.Equal(starts, w.Agent.Calls.Count(c => c.Method == nameof(IAgentClient.Start)));
+
+        await w.Agent.SendStatusAsync(new ProfileStatus(sunday, ServerState.Offline, null, null, null, null, 0));
+        Assert.True((await w.Owner.PostAsync($"/api/servers/{w.ProfileId}/start", null)).IsSuccessStatusCode);
+        Assert.Equal(starts + 1, w.Agent.Calls.Count(c => c.Method == nameof(IAgentClient.Start)));
     }
 
     [Fact]

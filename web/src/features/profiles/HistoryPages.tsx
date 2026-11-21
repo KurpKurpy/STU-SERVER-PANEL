@@ -36,10 +36,22 @@ export function RevisionsTab() {
     },
   })
   const numbers = revisions.data?.map(r => r.number) ?? []
+  // Clear history: everything but the current revision and the one applied to the server.
+  const [clearing, setClearing] = useState(false)
+  const clearHistory = useMutation({
+    mutationFn: () => api(`/api/profiles/${p.id}/revisions/clear`, { method: 'POST' }),
+    onSuccess: async () => {
+      setClearing(false)
+      await queryClient.invalidateQueries({ queryKey: ['revisions', p.id] })
+    },
+  })
+  const old = revisions.data?.filter(r => r.number !== p.revision && !r.applied).length ?? 0
+  const appliedNumber = revisions.data?.find(r => r.applied)?.number
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel title="Revisions">
+      <Panel title="Revisions" meta={can('profiles.manage') && old > 0
+        ? <Button size="sm" onClick={() => { clearHistory.reset(); setClearing(true) }}>Clear history</Button> : undefined}>
         {revisions.isPending && <div className="px-6 py-5"><Loading /></div>}
         {revisions.error && <div className="px-6 py-5"><ErrorNote error={revisions.error} onRetry={() => revisions.refetch()} /></div>}
         {revisions.data && (
@@ -76,6 +88,17 @@ export function RevisionsTab() {
             : diff.isPending ? <Loading /> : diff.error ? <ErrorNote error={diff.error} /> : <DiffView files={diff.data!.files} />}
         </div>
       </Panel>
+      <Dialog open={clearing} onClose={() => setClearing(false)} title="Clear revision history?">
+        <p className="m-0 max-w-prose text-text-secondary">
+          Deletes {old} old revision{old === 1 ? '' : 's'} of {p.name}. Keeps r{p.revision}, the current one
+          {appliedNumber && appliedNumber !== p.revision ? `, and r${appliedNumber}, the one on the server` : ''}. They can't be brought back; the audit log keeps a record.
+        </p>
+        {clearHistory.error && <p role="alert" className="m-0 text-accent-text">{errorMessage(clearHistory.error)}</p>}
+        <div className="flex justify-end gap-2.5">
+          <Button onClick={() => setClearing(false)}>Cancel</Button>
+          <Button variant="danger" busy={clearHistory.isPending} onClick={() => clearHistory.mutate()}>Clear history</Button>
+        </div>
+      </Dialog>
       <Dialog open={resetting !== null} onClose={() => setResetting(null)} title={`Reset to revision ${resetting ?? ''}?`}>
         <p className="m-0 max-w-prose text-text-secondary">
           Creates revision {p.revision + 1} with revision {resetting}'s settings and passwords. The server keeps running what was applied until you apply again.

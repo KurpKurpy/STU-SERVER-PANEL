@@ -280,9 +280,9 @@ public class PlayerTests
         }
     }
 
-    // Final review I5: profiles saved before 7a can already sit on each other's RCon port (game port + 10); Start says so.
+    // Final review I5: profiles can sit on each other's RCon port (game port + 10); Start says so while the other one runs.
     [Fact]
-    public async Task Start_refuses_a_profile_saved_before_7a_whose_ports_hit_another_profiles_rcon_port()
+    public async Task Start_refuses_a_profile_whose_ports_hit_a_running_profiles_rcon_port()
     {
         using var f = new PanelFactory();
         var w = await RunningAsync(f);
@@ -298,6 +298,8 @@ public class PlayerTests
             (await db.Profiles.SingleAsync(x => x.Slug == "second")).Port = port + 10; // what a 10-spaced pair saved before 7a looks like
             await db.SaveChangesAsync();
         }
+        var second = (await made.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        await w.Agent.SendStatusAsync(new ProfileStatus(second, ServerState.Online, 4343, DateTime.UtcNow, null, null, null));
         var starts = w.Agent.Calls.Count(c => c.Method == nameof(IAgentClient.Start));
 
         var r = await w.Owner.PostAsync($"/api/servers/{w.ProfileId}/start", null);

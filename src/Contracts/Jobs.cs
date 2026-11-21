@@ -16,7 +16,8 @@ public sealed record JobSpec(Guid JobId, JobKind Kind, string? SteamUser, string
 // Progress is 0..1, or null when nothing can be measured. Prompt is set while the job waits for a Steam answer.
 public sealed record JobUpdate(Guid JobId, double? Progress, string[] Lines, SteamPrompt? Prompt);
 
-public sealed record JobItemResult(long WorkshopId, bool Ok, string? Error, long SizeBytes, string[] KeyFiles);
+// Name: the mod's own name from its meta.cpp or mod.cpp, the only name an unlisted mod has.
+public sealed record JobItemResult(long WorkshopId, bool Ok, string? Error, long SizeBytes, string[] KeyFiles, string? Name = null);
 
 // Phase 7b: a backup made (Made), the backup taken just before a restore (Before), and what a restore had to skip (Note).
 public sealed record BackupMade(string File, long SizeBytes, string? Note);

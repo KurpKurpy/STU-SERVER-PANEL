@@ -104,14 +104,14 @@ public class RoleSwitchTests
     }
 
     // Final review C-2: real installs always load appsettings.json, so its list (not the code's default) decides who needs 2FA.
+    // The unit chose (2026-11-21) that nobody is made to use it; anyone can still turn it on, and Settings can require it per role.
     [Fact]
-    public void The_shipped_settings_require_two_factor_for_Owner_S1_and_S4()
+    public void The_shipped_settings_require_two_factor_for_nobody()
     {
         static string Here([System.Runtime.CompilerServices.CallerFilePath] string path = "") => path;
         var file = Path.Combine(Path.GetDirectoryName(Here())!, "..", "..", "src", "Panel", "appsettings.json");
         var list = JsonDocument.Parse(File.ReadAllText(file)).RootElement.GetProperty("Auth").GetProperty("TwoFactorRequiredRoles").GetString()!;
-        Assert.Equal("Owner,S1,S4", list);
-        Assert.All(list.Split(','), name => Assert.Contains(name, Permissions.SystemRoleDefaults.Keys));
+        Assert.Equal("", list);
     }
 
     // Final review C-2: a console that never saved its Settings page reads the list from its config file, which may predate the S-shops.

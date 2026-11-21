@@ -33,7 +33,7 @@ The built-in roles are the 13th's staff sections. Each can still be edited on **
 | S7 | trainers (FTXs) | operations (plan and Prepare), Start mission, the mission library |
 | Member | everyone | server status, join info, the mission library, operations |
 
-- **S1 and S4 look after the server.** Two-factor sign-in is required for Owner, S1 and S4 by default (Settings).
+- **S1 and S4 look after the server.** Two-factor sign-in is optional for everyone; Settings can require it for chosen roles.
 - **Switching an older console:** at its first start on this version, members of the old built-in roles move across (Server Administrator → S1, Mod Manager → S4, Mission Maker and Zeus → S3), the two-factor list follows, the old roles are deleted, and one `roles.switched` audit entry records who moved where (in its details, which the Audit page doesn't show yet). Edits made to the old roles' permissions aren't carried over; per-member grants and denies are.
 
 ## Profiles: save, apply, start
@@ -50,6 +50,7 @@ The built-in roles are the 13th's staff sections. Each can still be edited on **
 - **Steam account:** set its name on the **Mods** page. It must own Arma 3: the dedicated server (app 233780) and Arma's Workshop mods refuse an anonymous sign-in. Only the name is stored.
 - **Signing in:** when SteamCMD asks for the password or a Steam Guard code, the job shows a box for it. The answer goes from the browser through the panel to SteamCMD's input and is never stored, logged or put on a command line; the job log masks it. SteamCMD then remembers the sign-in in its own `config` folder, so later jobs don't ask.
 - **Library:** paste Workshop IDs or links, or import an Arma 3 Launcher preset (`.html`) under **Mod lists**. **Install missing** and **Update all** run SteamCMD jobs one at a time on the agent, with progress. **Check for updates** asks Steam for each mod's latest version and re-reads the agent's folders, which also adds local mods (folders copied into the agent's `localmods`).
+- **Unlisted mods:** Steam's public lookup can't see them, so they're added as "Workshop item <id>" and take their name from their own files once downloaded. SteamCMD downloads them with the saved sign-in. Steam can't say when they change, so **Update all** fetches them every time ("+ N unlisted"). A private or removed mod fails its download with Steam's reason.
 - **Mod lists:** each entry is a client mod (`-mod`), server only (`-serverMod`), headless (the headless clients' `-mod`) or optional (its key is allowed but nothing loads it). Lists export back to a Launcher preset.
 - **Profiles** pick a list on their **Mods** tab; it's part of the revision, so it takes effect on **Apply**.
 - **Start** copies the list's keys into the server's `keys` folder after backing the folder up to `backups\keys\`. **Server keys → Clean up keys** removes only keys of library mods that the chosen lists don't use; `a3.bikey`, Creator DLC keys and any key no library mod provides always stay.
@@ -270,7 +271,7 @@ Dev data lives in `data/` (gitignored): `console.db`, Data Protection `keys/`, a
 
 1. Start the panel. With no accounts yet, it writes a one-time setup token to `data/setup-token.txt` and prints it in the console.
 2. Open `/setup`, paste the token, and create the Owner account.
-3. Owner, S1 and S4 must turn on two-factor sign-in (any authenticator app) before they can do anything else. Save the recovery codes.
+3. Two-factor sign-in is optional (any authenticator app, from the account page). Settings can require it for chosen roles; then they must turn it on before doing anything else, and should save the recovery codes.
 4. Invite members from **Members → Invites**: pick a role, copy the link, and paste it into a Discord DM. No email is sent.
 
 ## Tests

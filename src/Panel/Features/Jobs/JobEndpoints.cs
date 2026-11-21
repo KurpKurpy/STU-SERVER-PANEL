@@ -13,6 +13,7 @@ using Panel.Settings;
 namespace Panel.Features.Jobs;
 
 public record AnswerBody(string? Answer);
+public record ClearJobsBody(string[]? Types);
 public record SteamBody(string? Username);
 
 public static partial class JobEndpoints
@@ -28,6 +29,7 @@ public static partial class JobEndpoints
         // Answering or cancelling needs the job's own permission, checked in the handler (Ruling 14).
         g.MapPost("/{id:guid}/answer", Answer).RequirePermission(Permissions.ModsView);
         g.MapPost("/{id:guid}/cancel", Cancel).RequirePermission(Permissions.ModsView);
+        g.MapPost("/clear", Clear).RequirePermission(Permissions.ModsView);
 
         var steam = app.MapGroup("/api/steam");
         steam.MapGet("", async (AppSettingsService settings) => Results.Ok(new { username = await settings.SteamUsernameAsync() })).RequirePermission(Permissions.ModsView);
@@ -37,6 +39,20 @@ public static partial class JobEndpoints
     private static async Task<JobDto[]> List(AppDb db, bool? active) =>
         (await db.Jobs.Where(j => active != true || j.Status == JobStatus.Queued || j.Status == JobStatus.Running || j.Status == JobStatus.NeedsInput)
             .OrderByDescending(j => j.CreatedAt).Take(100).ToListAsync()).Select(j => JobDto.From(j)).ToArray();
+
+    // Clear history (2026-11-21): the finished jobs of the kinds a page shows, only those this person may run. Open jobs always stay.
+    private static async Task<IResult> Clear(ClearJobsBody body, AppDb db, PermissionService permissions, AuditLog audit, HttpContext ctx)
+    {
+        var types = (body.Types ?? []).Distinct().ToArray();
+        if (types.Length == 0) return ApiError.Field("types", "Say which kinds of job to clear.");
+        var userId = Guid.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var mine = await permissions.IsOwnerAsync(userId) ? null : (await permissions.EffectiveAsync(userId)).ToArray();
+        JobStatus[] finished = [JobStatus.Succeeded, JobStatus.Failed, JobStatus.Cancelled, JobStatus.Interrupted];
+        var cleared = await db.Jobs.Where(j => types.Contains(j.Type) && finished.Contains(j.Status) && (mine == null || j.Permission == null || mine.Contains(j.Permission)))
+            .ExecuteDeleteAsync();
+        if (cleared > 0) await audit.RecordAsync("jobs.cleared", $"Cleared {cleared} finished job(s)", "job", null, new { types }, actorId: userId);
+        return Results.Ok(new { cleared });
+    }
 
     private static async Task<IResult> Get(Guid id, AppDb db) =>
         await db.Jobs.FindAsync(id) is { } job ? Results.Ok(JobDto.From(job, withLog: true)) : ApiError.Of(404, "not_found", "No such job.");

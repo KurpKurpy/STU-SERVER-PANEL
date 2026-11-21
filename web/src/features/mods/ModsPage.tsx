@@ -51,6 +51,7 @@ export function ModsPage() {
   const list = (mods.data ?? []).filter(m => !filter || m.name.toLowerCase().includes(filter.toLowerCase()) || String(m.workshopId ?? '').includes(filter))
   const missing = (mods.data ?? []).filter(m => m.workshopId && ['NotInstalled', 'Failed', 'Missing'].includes(m.status)).length
   const updates = (mods.data ?? []).filter(m => m.updateAvailable).length
+  const unlisted = (mods.data ?? []).filter(m => m.notPublic && m.status === 'Installed').length
   const toggle = (id: string) => setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const workshopSelected = [...selected].filter(id => mods.data?.find(m => m.id === id)?.workshopId)
 
@@ -61,7 +62,8 @@ export function ModsPage() {
         <>
           <Link to="/mods/lists">Mod lists</Link>
           {can('mods.manage') && <Button size="sm" busy={refresh.isPending} onClick={() => refresh.mutate()}>Check for updates</Button>}
-          {can('mods.install') && updates > 0 && <Button size="sm" onClick={() => install.mutate({ all: true, mode: 'update' })}>Update all ({updates})</Button>}
+          {can('mods.install') && updates + unlisted > 0 && <Button size="sm" onClick={() => install.mutate({ all: true, mode: 'update' })}
+            title={unlisted ? "Unlisted mods are fetched every time: Steam can't say when they change." : undefined}>Update all ({updates}{unlisted ? ` + ${unlisted} unlisted` : ''})</Button>}
           {can('mods.install') && missing > 0 && <Button size="sm" variant="primary" onClick={() => install.mutate({ all: true, mode: 'install' })}>Install missing ({missing})</Button>}
         </>
       }>

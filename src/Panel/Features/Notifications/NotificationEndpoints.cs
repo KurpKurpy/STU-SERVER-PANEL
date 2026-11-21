@@ -17,6 +17,7 @@ public static class NotificationEndpoints
         g.MapGet("", Feed);
         g.MapPost("/{id:guid}/read", Read);
         g.MapPost("/read-all", ReadAll);
+        g.MapPost("/clear", Clear);
     }
 
     private static Guid Me(HttpContext ctx) => Guid.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -46,5 +47,12 @@ public static class NotificationEndpoints
         var now = DateTime.UtcNow;
         await db.UserNotifications.Where(n => n.UserId == me && n.ReadAt == null).ExecuteUpdateAsync(s => s.SetProperty(n => n.ReadAt, now));
         return Results.NoContent();
+    }
+
+    // Clear history (2026-11-21): the caller's own notifications, nobody else's.
+    private static async Task<IResult> Clear(AppDb db, HttpContext ctx)
+    {
+        var me = Me(ctx);
+        return Results.Ok(new { cleared = await db.UserNotifications.Where(n => n.UserId == me).ExecuteDeleteAsync() });
     }
 }

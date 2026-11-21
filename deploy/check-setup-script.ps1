@@ -34,6 +34,12 @@ Check 'gate: Windows spelling of Local Service' (Test-RunsAs 'NT Authority\Local
 Check 'firewall: a rule for another game port is noticed' (-not (Test-SamePorts @('2302-2306') @('2100-2104')))
 Check 'firewall: the same ports in any order match' ((Test-SamePorts @('443', '80') @('80', '443')) -and (Test-SamePorts @('2100-2104') @('2100-2104')))
 
+# Four servers (Friday, Sunday, Training, Dev) open their blocks in one run, however the list is typed.
+Check 'game ports: one port' ((@(Get-GamePorts '2302') -join ',') -eq '2302-2306')
+Check 'game ports: four, with commas' ((@(Get-GamePorts '2100,2200,2300,2400') -join ',') -eq '2100-2104,2200-2204,2300-2304,2400-2404')
+Check 'game ports: spaces, repeats and any order' ((@(Get-GamePorts '2400 2100, 2100') -join ',') -eq '2100-2104,2400-2404')
+Check 'game ports: nonsense refused' ($null -eq (Get-GamePorts 'abc') -and $null -eq (Get-GamePorts '80') -and $null -eq (Get-GamePorts ''))
+
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ("13c-setup-check-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
@@ -52,8 +58,9 @@ try {
     $root = Join-Path $tmp 'console'
     foreach ($f in 'panel\Panel.exe', 'agent\ConsoleAgent.exe', 'caddy\caddy.exe') { New-Item -ItemType File -Force -Path (Join-Path $root $f) | Out-Null }
     Copy-Item (Join-Path $PSScriptRoot '..\src\Agent\appsettings.json') (Join-Path $root 'agent\appsettings.json')
-    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File $script -WhatIf -Root $root -Domain 'console.example.invalid' -InstallRoot (Join-Path $tmp 'arma') -DataRoot (Join-Path $tmp 'data') | Out-String
+    $out = & powershell -NoProfile -ExecutionPolicy Bypass -File $script -WhatIf -Root $root -Domain 'console.example.invalid' -InstallRoot (Join-Path $tmp 'arma') -DataRoot (Join-Path $tmp 'data') -GamePort 2100,2200,2300,2400 | Out-String
     Check 'dry run exits cleanly' ($LASTEXITCODE -eq 0)
+    Check 'dry run opens all four game port blocks' ($out -match 'UDP 2100-2104, 2200-2204, 2300-2304, 2400-2404')
     Check 'dry run changes nothing' (-not (Test-Path (Join-Path $root 'caddy\Caddyfile')) -and -not (Test-Path (Join-Path $tmp 'arma')))
     Check 'dry run reaches the end' ($out -match 'would: ask for the agent key')
     Check 'dry run shows the setup address' ($out -match 'Open https://console.example.invalid/setup ')

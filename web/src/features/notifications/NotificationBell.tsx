@@ -35,6 +35,10 @@ export function NotificationBell() {
     await api('/api/notifications/read-all', { method: 'POST' })
     await refresh()
   }
+  async function clearAll() { // clear history: only your own notifications
+    await api('/api/notifications/clear', { method: 'POST' })
+    await refresh()
+  }
 
   const unread = feed.data?.unread ?? 0
   const items = feed.data?.items ?? []
@@ -51,7 +55,10 @@ export function NotificationBell() {
           className="absolute inset-x-4 top-full z-20 mt-2 flex max-h-[70vh] flex-col border border-line-strong bg-surface shadow-lg md:inset-x-auto md:right-0 md:w-96">
           <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
             <span className="text-2xs font-semibold uppercase tracking-label text-text-muted">Notifications</span>
-            {unread > 0 && <Button size="sm" onClick={readAll}>Mark all read</Button>}
+            <div className="flex gap-2">
+              {unread > 0 && <Button size="sm" onClick={readAll}>Mark all read</Button>}
+              {items.length > 0 && <Button size="sm" onClick={clearAll}>Clear all</Button>}
+            </div>
           </div>
           {items.length === 0
             ? <p className="m-0 px-4 py-5 text-text-muted">Nothing yet.</p>

@@ -43,7 +43,7 @@ public sealed partial class ModStore(Areas areas)
     }
 
     // The Workshop title from meta.cpp, else the mod's own name from mod.cpp.
-    private static string? Name(string folder)
+    public static string? Name(string folder)
     {
         foreach (var file in new[] { "meta.cpp", "mod.cpp" })
         {

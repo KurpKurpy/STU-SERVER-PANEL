@@ -202,21 +202,25 @@ public static partial class ProfileEndpoints
         if (install is null) return ApiError.Field("serverInstallId", "Pick a registered server install.");
         if (await db.Profiles.AnyAsync(o => o.Id != p.Id && o.Slug == slug))
             return ApiError.Of(409, "conflict_slug", $"Another profile already uses the slug \"{slug}\".");
-        // Each profile reserves its game port through port + 4 on its agent's machine.
-        var clash = await PortClashAsync(db, p.Id, install.AgentId, port);
-        if (clash is not null)
-            return ApiError.Of(409, "port_conflict", $"Ports {port}–{port + 4} (and RCon port {port + Panel.Features.Players.RconSettings.PortOffset}) overlap profile {clash}.");
+        // Profiles may share exactly the same port (the unit's Friday and Sunday servers both use 2100): Start refuses while the other runs.
+        // A partial overlap of game or RCon ports is a mistake, not a share, so it's still refused here.
+        if ((await PortSharersAsync(db, p.Id, install.AgentId, port)).FirstOrDefault(o => o.Port != port) is { } near)
+            return ApiError.Of(409, "port_conflict", $"Ports {port}–{port + 4} (and RCon port {port + Panel.Features.Players.RconSettings.PortOffset}) overlap profile "
+                + $"{near.Name} on {near.Port}. Use exactly the same port to share it (only one runs at a time), or move it 15 or more away.");
         return null;
     }
 
-    internal static Task<string?> PortClashAsync(AppDb db, Guid profileId, Guid agentId, int port) =>
-        (from o in db.Profiles
+    public sealed record PortSharer(Guid Id, string Name, int Port);
+
+    // The other profiles on this agent's machine whose game ports (port through port + 4) or RCon port (game port + 10) touch ours.
+    internal static async Task<List<PortSharer>> PortSharersAsync(AppDb db, Guid profileId, Guid agentId, int port) =>
+        await (from o in db.Profiles
          join i in db.Installs on o.ServerInstallId equals i.Id
          where o.Id != profileId && i.AgentId == agentId
             && ((o.Port <= port + 4 && port <= o.Port + 4)                                                        // the game ports overlap
                 || (port <= o.Port + Panel.Features.Players.RconSettings.PortOffset && o.Port + Panel.Features.Players.RconSettings.PortOffset <= port + 4)  // ours cover its RCon port
                 || (o.Port <= port + Panel.Features.Players.RconSettings.PortOffset && port + Panel.Features.Players.RconSettings.PortOffset <= o.Port + 4)) // its cover ours (Phase 7a Ruling 4)
-         select o.Name).FirstOrDefaultAsync();
+         select new PortSharer(o.Id, o.Name, o.Port)).ToListAsync();
 
     private static object AuditDetails(Profile p) => new { name = p.Name, slug = p.Slug, port = p.Port, executable = p.Executable };
 
@@ -456,7 +460,7 @@ public static partial class ProfileEndpoints
         if (store.LoadSecrets(source) is not { } sourceSecrets) return Unreadable();
         var agentId = await db.Installs.Where(i => i.Id == source.ServerInstallId).Select(i => i.AgentId).FirstAsync();
         var port = source.Port + 5;
-        while (port <= 65530 && await PortClashAsync(db, Guid.Empty, agentId, port) is not null) port += 5;
+        while (port <= 65530 && (await PortSharersAsync(db, Guid.Empty, agentId, port)).Count > 0) port += 5; // a copy gets ports of its own
         if (port > 65530) return ApiError.Of(409, "port_conflict", "No free block of five ports is left above this profile's port.");
 
         var copy = new Profile { Id = Guid.NewGuid() };

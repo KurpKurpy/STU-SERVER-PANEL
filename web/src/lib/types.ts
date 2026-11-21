@@ -164,6 +164,7 @@ export interface ModDto {
   id: string; workshopId: number | null; localFolder: string | null; name: string; status: ModStatus; sizeBytes: number; expectedBytes: number | null
   installedAt: string | null; workshopUpdatedAt: string | null; latestWorkshopUpdate: string | null; updateAvailable: boolean; previewUrl: string | null
   keyFiles: string[]; lastError: string | null; lists: string[]; scanStatus: ScanState; scannedAt: string | null; scanNote: string | null
+  notPublic: boolean // unlisted (or private): Steam can't say when it changes, so Update all fetches it every time
 }
 export interface PasteResult { added: ModDto[]; existing: ModDto[]; refused: { workshopId: number; reason: string }[]; problems: string[] }
 export interface CollectionItemDto {

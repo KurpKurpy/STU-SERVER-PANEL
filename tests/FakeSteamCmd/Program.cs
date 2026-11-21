@@ -41,7 +41,7 @@ for (var i = 0; i < args.Length; i++)
                 Out("\x1B[97mCached credentials not found.\r\n\x1B[m\r\npassword: ");
                 var password = ReadAnswer();
                 if (scenario.EchoSecrets) Out($"\r\ndebug: got {password}\r\n");
-                if (password != scenario.Password) { Out("\r\nLogging in user '" + user + "' to Steam Public...FAILED (Invalid Password)\r\n"); return 5; }
+                if (password != scenario.Password) { Out("\r\nLogging in user '" + user + "' to Steam Public...ERROR (Invalid Password)\r\n"); return 5; }
                 if (scenario.Guard is { } guard)
                 {
                     if (guard == "mobile")

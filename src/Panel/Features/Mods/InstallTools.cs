@@ -66,7 +66,7 @@ public static class InstallTools
         var branch = (requestedBranch ?? await LastBranchAsync(db, id) ?? "public").ToLowerInvariant();
         if (!Branches.Contains(branch)) return (null, ApiError.Field("branch", "The branch is public, creatordlc or profiling."));
         if (await settings.SteamUsernameAsync() is not { } steamUser)
-            return (null, ApiError.Of(409, "steam_user", "Set the Steam account first: the dedicated server needs an account that owns Arma 3."));
+            return (null, ApiError.Of(409, "steam_user", "Set the Steam account first (Mods page, Steam account): the dedicated server needs an account that owns Arma 3."));
         // SteamCMD rewrites the server's files: never under a running server.
         var profiles = await db.Profiles.Where(p => p.ServerInstallId == id).Select(p => new { p.Id, p.Name }).ToListAsync();
         if (profiles.FirstOrDefault(p => registry.Status(p.Id) is { State: not (ServerState.Offline or ServerState.Error) }) is { } running)

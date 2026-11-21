@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Panel.Api;
 using Panel.Audit;
@@ -22,6 +23,7 @@ public static class RevisionEndpoints
         g.MapGet("/{id:guid}/revisions/{n:int}/files", Files).RequirePermission(Permissions.ProfilesView);
         g.MapGet("/{id:guid}/compare", Compare).RequirePermission(Permissions.ProfilesView);
         g.MapPost("/{id:guid}/revisions/{n:int}/reset", Reset).RequirePermission(Permissions.ProfilesManage);
+        g.MapPost("/{id:guid}/revisions/clear", Clear).RequirePermission(Permissions.ProfilesManage);
         g.MapGet("/compare", CompareProfiles).RequirePermission(Permissions.ProfilesView);
     }
 
@@ -85,6 +87,20 @@ public static class RevisionEndpoints
         if (secrets is null)
             return ApiError.Of(409, "secrets_unreadable", "That revision's passwords can't be decrypted (the panel's encryption keys changed).");
         return await ProfileEndpoints.SaveAsync(p, snapshot, secrets, $"Reset to revision {n}", [], db, store, audit, ctx, "profile.reset");
+    }
+
+    // Clear history (2026-11-21): every revision but the current one and the one applied to the server. Numbering carries on from the
+    // current one, so a revision number is never reused.
+    private static async Task<IResult> Clear(Guid id, AppDb db, ProfileStore store, AuditLog audit, HttpContext ctx)
+    {
+        if (await db.Profiles.FindAsync(id) is not { } p) return ApiError.Of(404, "not_found", "No such profile.");
+        var head = await store.HeadNumberAsync(id);
+        var applied = p.AppliedRevisionId;
+        var cleared = await db.ProfileRevisions.Where(r => r.ProfileId == id && r.Number != head && (applied == null || r.Id != applied)).ExecuteDeleteAsync();
+        if (cleared > 0)
+            await audit.RecordAsync("profile.revisions.cleared", $"Cleared {cleared} old revision(s) of {p.Name}", "profile", p.Id.ToString(), new { kept = head },
+                actorId: Guid.TryParse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier), out var u) ? u : null);
+        return Results.Ok(new { cleared });
     }
 
     private static async Task<IResult> CompareProfiles(Guid a, Guid b, AppDb db, ProfileStore store)

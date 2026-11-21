@@ -39,10 +39,33 @@ public class ModTests
 
         var r = await PasteAsync(owner, "111\nhttps://steamcommunity.com/sharedfiles/filedetails/?id=222\n333");
 
-        var added = Assert.Single(r.GetProperty("added").EnumerateArray());
-        Assert.Equal(("CBA_A3", "NotInstalled", 5000), (added.GetProperty("name").GetString(), added.GetProperty("status").GetString(), added.GetProperty("expectedBytes").GetInt64()));
-        Assert.Equal([222L, 333L], r.GetProperty("refused").EnumerateArray().Select(x => x.GetProperty("workshopId").GetInt64()));
+        var added = r.GetProperty("added").EnumerateArray().ToArray();
+        Assert.Equal(("CBA_A3", "NotInstalled", 5000), (added[0].GetProperty("name").GetString(), added[0].GetProperty("status").GetString(), added[0].GetProperty("expectedBytes").GetInt64()));
+        Assert.Equal("Workshop item 333", added[1].GetProperty("name").GetString()); // unlisted: Steam's public lookup can't see it, SteamCMD can
+        Assert.Equal([222L], r.GetProperty("refused").EnumerateArray().Select(x => x.GetProperty("workshopId").GetInt64()));
         Assert.Single((await PasteAsync(owner, "111")).GetProperty("existing").EnumerateArray());
+    }
+
+    // The unit's unlisted mods (2026-11-21): added, named from their own files once downloaded, and fetched by Update all, since Steam's
+    // public lookup can't say when they change.
+    [Fact]
+    public async Task An_unlisted_mod_is_named_from_its_files_and_Update_all_fetches_it()
+    {
+        using var f = new PanelFactory();
+        var (owner, agent) = await SetUpAsync(f);
+        await using var lease = agent;
+        f.Workshop.Set(999, "", ok: false);
+        await PasteAsync(owner, "999");
+        var mod = await ModAsync(owner, 999);
+        Assert.True(mod.GetProperty("notPublic").GetBoolean());
+
+        Assert.Equal(HttpStatusCode.OK, (await owner.PostAsJsonAsync("/api/mods/install", new { modIds = new[] { mod.GetProperty("id").GetGuid() }, mode = "install" })).StatusCode);
+        await agent.SendJobFinishedAsync(new JobResult(agent.LastJob().JobId, true, null, [new JobItemResult(999, true, null, 10, [], "13th STU Aux")]));
+        await AgentKit.WaitUntilAsync(() => ModAsync(owner, 999).GetAwaiter().GetResult().GetProperty("status").GetString() == "Installed", 10);
+        Assert.Equal("13th STU Aux", (await ModAsync(owner, 999)).GetProperty("name").GetString());
+
+        Assert.Equal(HttpStatusCode.OK, (await owner.PostAsJsonAsync("/api/mods/install", new { all = true, mode = "update" })).StatusCode);
+        Assert.Equal(999, Assert.Single(agent.LastJob().Items).Id);
     }
 
     [Fact]

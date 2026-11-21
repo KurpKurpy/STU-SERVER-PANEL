@@ -41,9 +41,9 @@ In PowerShell, from the repository folder (`STU-SERVER-PANEL`):
 3. Download Caddy for **Windows amd64** from `https://caddyserver.com/download` and save it as `C:\13thConsole\caddy\caddy.exe`.
 4. Right-click the Start button, choose **Terminal (Admin)**, and run:
    ```powershell
-   powershell -ExecutionPolicy Bypass -File C:\13thConsole\setup-server.ps1 -GamePort 2100
+   powershell -ExecutionPolicy Bypass -File C:\13thConsole\setup-server.ps1 -GamePort 2100,2300,2400
    ```
-   `-GamePort` is the game port your profile will use; the firewall opens it through port + 4 (leave it out for 2302).
+   `-GamePort` lists each server's game port: here Ops (Friday and Sunday share 2100, since they never run together), Training and Dev. The firewall opens each one through port + 4. Leave it out for a single server on 2302. Space ports at least 100 apart: each server's RCon port is its game port + 10. Two profiles may use exactly the same port, but only one of them can run at a time; Start says which one to stop first. A partial overlap is refused when the profile is saved.
 5. Answer its questions: the console's web address, and a new password for `arma-svc` (write it down).
 6. It shows the setup code. Do Part G in the browser, then **Server → Setup → Add agent**, and paste the key into the script. Or press Enter to stop there, and run it again when you have the key.
 
@@ -150,7 +150,7 @@ In PowerShell, always type `sc.exe`: plain `sc` is a different PowerShell comman
 ## Part G: first sign-in
 
 17. Open `https://console.<your-domain>/setup`, paste the setup token, and create the **Owner** account. The password needs at least 12 characters.
-18. Turn on two-factor sign-in with any authenticator app; Owner, S1 and S4 can't do anything else until they do. Save the recovery codes somewhere safe.
+18. Two-factor sign-in is optional: anyone can turn it on from their account page with an authenticator app, and **Settings** can require it for chosen roles. Nobody is made to use it by default.
 
 ## Part H: connect the agent
 
@@ -211,7 +211,6 @@ In PowerShell, always type `sc.exe`: plain `sc` is a different PowerShell comman
 25. **Members:** **Members → Invites**, pick a role (Member, S1–S4, S6, S7), copy the link and send it in a Discord DM. No email is sent.
     - The link lasts 72 hours unless you set another time (1 hour to 7 days).
     - The member opens the link, picks a username, a display name and a password of 12 or more characters, and signs in.
-    - S1 and S4 must also set up two-factor sign-in.
 26. **Players:** in Arma 3, **Server Browser → Direct Connect**, enter the box's IP and port 2302 (or find the server by name). Members whose role includes "See the server's join password" see it on the Server page.
 
 ## Looking after it

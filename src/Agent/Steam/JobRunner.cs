@@ -29,7 +29,8 @@ public sealed partial class JobRunner : IDisposable
     [GeneratedRegex("^[A-Za-z0-9_]{1,64}$")]
     private static partial Regex SteamUser();
 
-    [GeneratedRegex(@"FAILED \(([^)]*)\)", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    // Older SteamCMD says "FAILED (Invalid Password)"; the one on the box (2026-11-21) says "ERROR (Invalid Password)".
+    [GeneratedRegex(@"(?:FAILED|ERROR) \(([^)]*)\)", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex LoginFailed();
 
     private sealed class Active(Guid jobId)
@@ -243,7 +244,7 @@ public sealed partial class JobRunner : IDisposable
         {
             var folder = Path.Combine(_areas.WorkshopContent, id.ToString());
             return results.GetValueOrDefault(id) is { Ok: true }
-                ? new JobItemResult(id, true, null, ModFiles.Size(folder), ModFiles.KeyNames(folder))
+                ? new JobItemResult(id, true, null, ModFiles.Size(folder), ModFiles.KeyNames(folder), ModStore.Name(folder))
                 : new JobItemResult(id, false, results.GetValueOrDefault(id)?.Error
                     ?? (timedOut ? "SteamCMD stopped responding." : "SteamCMD gave no result for this item."), 0, []);
         }).ToArray();

@@ -158,11 +158,12 @@ public static partial class ServerEndpoints
                     UseBasicCfg = files.BasicCfg is not null, CustomArgs = ConfigFiles.LaunchArguments(snapshot.Settings),
                     Headless = ConfigFiles.Headless(snapshot.Settings, secrets),
                 };
-                // Final review I5: a profile saved before 7a can sit on another profile's RCon port (game port + 10); say so rather than start a
-                // pair where one server can't bind or the other's RCon fails.
-                if (action is Action.Start or Action.Restart && await Panel.Features.Profiles.ProfileEndpoints.PortClashAsync(db, p.Id, install.AgentId, p.Port) is { } clash)
-                    return ApiError.Of(409, "port_conflict", $"Ports {p.Port}–{p.Port + 4} or RCon port {Panel.Features.Players.RconSettings.Port(p.Port)} overlap profile {clash}. "
-                        + "RCon uses game port + 10, so change one profile's port (Profiles → General) while both are stopped.");
+                // Profiles may share ports (Friday and Sunday on 2100), or touch another's RCon port (game port + 10): only one of them runs.
+                if (action is Action.Start or Action.Restart
+                    && (await Panel.Features.Profiles.ProfileEndpoints.PortSharersAsync(db, p.Id, install.AgentId, p.Port))
+                        .FirstOrDefault(o => registry.Status(o.Id) is { State: not (ServerState.Offline or ServerState.Error) }) is { } clash)
+                    return ApiError.Of(409, "port_conflict", $"{clash.Name} is running on ports that overlap this server's ({p.Port}–{p.Port + 4}, RCon "
+                        + $"{Panel.Features.Players.RconSettings.Port(p.Port)}). Only one of them can run at a time: stop {clash.Name} first.");
                 // Phase 7a Rulings 3–4: RCon on loopback, game port + 10, with the profile's own generated password, whenever BattlEye is on.
                 if (action is Action.Start or Action.Restart && Panel.Features.Players.RconSettings.BattlEyeOn(snapshot.Settings))
                     spec = spec with { Rcon = new RconSpec(Panel.Features.Players.RconSettings.Port(p.Port), await Panel.Features.Players.RconSettings.PasswordAsync(p, db, dp)) };

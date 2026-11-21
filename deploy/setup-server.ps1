@@ -2,7 +2,9 @@
 13th Console: sets up the server box (the deploy guide's Parts C to F, and H).
 
 Run it on the server, in PowerShell as Administrator:
-    powershell -ExecutionPolicy Bypass -File C:\13thConsole\setup-server.ps1
+    powershell -ExecutionPolicy Bypass -File C:\13thConsole\setup-server.ps1 -GamePort 2100,2300,2400
+
+-GamePort lists each server's game port; the firewall opens each one through port + 4 (default 2302).
 
 Before you run it, C:\13thConsole holds panel\, agent\ and caddy\caddy.exe.
 
@@ -18,7 +20,8 @@ param(
     [string]$Domain,
     [string]$InstallRoot = 'C:\Arma3Server',
     [string]$DataRoot = 'C:\ArmaData',
-    [ValidateRange(1024, 65530)][int]$GamePort = 2302
+    # One game port per server, e.g. 2100,2300,2400 (Ops on Friday and Sunday, Training, Dev). A string, so the list survives -File.
+    [string]$GamePort = '2302'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -144,6 +147,13 @@ function Test-SamePorts([string[]]$Have, [string[]]$Want) {
     (@($Have | Sort-Object) -join ',') -eq (@($Want | Sort-Object) -join ',')
 }
 
+# The firewall blocks for the game ports typed (each port through port + 4), or $null if one isn't a port from 1024 to 65530.
+function Get-GamePorts([string]$Text) {
+    try { $ports = @($Text -split '[,\s]+' | Where-Object { $_ } | ForEach-Object { [int]$_ } | Sort-Object -Unique) } catch { return $null }
+    if ($ports.Count -eq 0 -or ($ports | Where-Object { $_ -lt 1024 -or $_ -gt 65530 })) { return $null }
+    $ports | ForEach-Object { "$_-$($_ + 4)" }
+}
+
 # Whether a service runs as one of the allowed accounts (Windows spells them in its own case, e.g. "NT Authority\LocalService").
 function Test-RunsAs([string]$Actual, [string[]]$Allowed) {
     [bool]$Actual -and [bool]($Allowed | Where-Object { $_ -ieq $Actual })
@@ -191,6 +201,8 @@ function Main {
     if (-not (Test-Path $caddyExe)) {
         Stop-Setup "Caddy isn't there yet. Download it from https://caddyserver.com/download (Platform: Windows amd64) and save it as:`n  $caddyExe`nThen run this again."
     }
+    $gameBlocks = @(Get-GamePorts $GamePort)
+    if (-not $gameBlocks[0]) { Stop-Setup "-GamePort takes game ports from 1024 to 65530, like 2100, or 2100,2300,2400 for several servers." }
     Say "  Computer: $env:COMPUTERNAME. Console folder: $Root"
 
     Head 'Web address'
@@ -324,7 +336,7 @@ function Main {
     Head 'Firewall'
     $rules = @(
         @{ Name = '13th Console HTTPS'; Protocol = 'TCP'; Ports = @('80', '443') },
-        @{ Name = 'Arma 3 server'; Protocol = 'UDP'; Ports = @("$GamePort-$($GamePort + 4)") }
+        @{ Name = 'Arma 3 server'; Protocol = 'UDP'; Ports = $gameBlocks }
     )
     foreach ($rule in $rules) {
         $existing = Get-NetFirewallRule -DisplayName $rule.Name -ErrorAction SilentlyContinue
@@ -367,9 +379,14 @@ function Main {
     $caddyRestart = $false
     if (-not (Test-RunsAs (Get-ServiceAccount $CaddyService) @($caddyAccount))) {
         Step "make '$CaddyService' run as $caddyAccount" {
-            $r = Invoke-CimMethod -Query "SELECT * FROM Win32_Service WHERE Name='$CaddyService'" -MethodName Change -Arguments @{ StartName = $caddyAccount; StartPassword = '' }
-            if ($r.ReturnValue -ne 0 -or -not (Test-RunsAs (Get-ServiceAccount $CaddyService) @($caddyAccount))) {
-                Stop-Unsafe $CaddyService "Couldn't make Caddy run as $caddyAccount (Windows error $($r.ReturnValue))."
+            # A virtual account takes no password at all (NULL); WMI's Change sends an empty one and gets error 22 (seen on the box).
+            # sc.exe sends none when password= is left out. The account's SID comes from the service SID, so that's switched on first.
+            try {
+                Native sc.exe @('sidtype', $CaddyService, 'unrestricted')
+                Native sc.exe @('config', $CaddyService, 'obj=', $caddyAccount)
+            } catch { Stop-Unsafe $CaddyService "Couldn't make Caddy run as ${caddyAccount}: $($_.Exception.Message)" }
+            if (-not (Test-RunsAs (Get-ServiceAccount $CaddyService) @($caddyAccount))) {
+                Stop-Unsafe $CaddyService "Couldn't make Caddy run as $caddyAccount (it still runs as $(Get-ServiceAccount $CaddyService))."
             }
         }
         $caddyRestart = $true
@@ -405,9 +422,7 @@ function Main {
         Say "  2. Paste this setup code (don't share it with anyone):"
         Write-Host "       $shown" -ForegroundColor Green
         Say '  3. Make the Owner account. The password needs 12 or more characters.'
-        Say '  4. Turn on two-factor sign-in: scan the QR code with an authenticator app on your phone'
-        Say '     (Microsoft Authenticator or Google Authenticator). Keep the recovery codes safe.'
-        Say '  5. Go to Server -> Setup -> Add agent, and copy the key it shows.'
+        Say '  4. Go to Server -> Setup -> Add agent, and copy the key it shows.'
     } else {
         Say "  No setup code: the Owner account is already made. Sign in at $siteUrl."
         if (-not $savedKey) { Say '  Then go to Server -> Setup -> Add agent, and copy the key it shows.' }
